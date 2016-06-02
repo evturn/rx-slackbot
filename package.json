@@ -1,0 +1,23 @@
+{
+  "name": "@evturn/rx-slackbot",
+  "version": "0.0.01",
+  "description": "Small ℞ implementation of connecting to a bot to Slack",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "slackbot",
+    "rxjs",
+    "observable"
+  ],
+  "author": "Evan Turner <ev@evturn.com> (http://evturn.com)",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.4",
+    "querystring": "^0.2.0",
+    "request": "^2.72.0",
+    "rxjs": "^5.0.0-beta.8",
+    "ws": "^1.1.0"
+  }
+}
