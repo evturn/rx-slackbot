@@ -16,8 +16,17 @@ const sendRequest = url => {
   })
 }
 
-const send = ({ query, ...params }) => {
+const makeRequest = ({ query, ...params }) => {
   return sendRequest(`https://slack.com/api/${query}?${qs.stringify(params)}`)
+}
+
+function send(query) {
+  return x => {
+    return makeRequest({
+      ...x,
+      query
+    })
+  }
 }
 
 export default send

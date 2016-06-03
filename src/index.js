@@ -13,7 +13,7 @@ const bot$ = Rx.Observable.of(bot)
 const actions$ = Rx.Observable.from(actions)
 
 const start$ = bot$
-  .flatMap(makeRequest('rtm.start'))
+  .flatMap(send('rtm.start'))
   .map(x => new ws(x.url))
   .flatMap(onConnect)
 
@@ -21,7 +21,7 @@ const reactions$ = start$
   .flatMap(filterIncomingMessages)
   .flatMap(createResponse)
   .delay(400)
-  .flatMap(makeRequest('chat.postMessage'))
+  .flatMap(send('chat.postMessage'))
   .subscribe(
     x => console.log('Next:', x),
     e => console.log('Error:', e),
@@ -36,15 +36,6 @@ function onConnect(socket) {
     Rx.Observable.fromEvent(socket, 'user_typing')
   )
   .map(x => JSON.parse(x))
-}
-
-function makeRequest(query) {
-  return x => {
-    return send({
-      ...x,
-      query
-    })
-  }
 }
 
 function filterIncomingMessages(evt) {
