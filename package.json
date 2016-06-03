@@ -14,10 +14,18 @@
   "author": "Evan Turner <ev@evturn.com> (http://evturn.com)",
   "license": "ISC",
   "dependencies": {
+    "babel-register": "^6.9.0",
     "express": "^4.13.4",
     "querystring": "^0.2.0",
     "request": "^2.72.0",
     "rxjs": "^5.0.0-beta.8",
     "ws": "^1.1.0"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.9.0",
+    "babel-core": "^6.9.1",
+    "babel-plugin-syntax-object-rest-spread": "^6.8.0",
+    "babel-preset-es2015": "^6.9.0",
+    "babel-preset-stage-0": "^6.5.0"
   }
 }
