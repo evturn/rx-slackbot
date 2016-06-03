@@ -17,11 +17,16 @@ const start$ = bot$
   .map(x => new ws(x.url))
   .flatMap(onConnect)
 
+const typing$ = start$
+  .filter(x => x.type === 'user_typing')
+
 const reactions$ = start$
   .flatMap(filterIncomingMessages)
   .flatMap(createResponse)
   .delay(400)
   .flatMap(send('chat.postMessage'))
+
+Rx.Observable.merge(reactions$, typing$)
   .subscribe(
     x => console.log('Next:', x),
     e => console.log('Error:', e),
