@@ -12,10 +12,65 @@ const app = express()
 const bot$ = Rx.Observable.of(bot)
 const actions$ = Rx.Observable.from(actions)
 
+/*
+  Start stream
+*/
 const stream$ = bot$
   .flatMap(send('rtm.start'))
   .map(x => new ws(x.url))
   .flatMap(onConnect)
+
+/*
+  File uploads
+*/
+const file$ = stream$
+  .filter(x => x.subtype === 'file_share')
+  .map(respondToFileShare)
+  .flatMap(sendResponse)
+
+
+/*
+  Messages w/ attachments
+*/
+const attachment$ = stream$
+  .filter(x => (
+    x.type === 'message' &&
+    x.message &&
+    x.message.attachments
+  ))
+  .map(respondToAttachment)
+  .flatMap(sendResponse)
+
+
+/*
+  Messages w/ keyword
+*/
+const message$ = stream$
+  .flatMap(respondToKeyword)
+  .flatMap(sendResponse)
+
+
+/*
+  Debugger
+*/
+const all$ = stream$
+  .do(x => console.log(x))
+
+
+/*
+  Subscription
+*/
+Rx.Observable.merge(
+  file$,
+  attachment$,
+  all$,
+  message$
+)
+.subscribe(
+  x => console.log(x),
+  e => console.log('Error:', e),
+  _ => console.log('Complete.')
+)
 
 function onConnect(socket) {
   return Rx.Observable.merge(
@@ -32,48 +87,7 @@ function onConnect(socket) {
   .map(x => JSON.parse(x))
 }
 
-
-const file$ = stream$
-  .filter(x => x.subtype === 'file_share')
-  .map(x => ({ ...x, reply: `Looks like a ${x.file.pretty_type} file with a mimetype of ${x.file.mimetype}.`}))
-  .flatMap(createResponse)
-  .delay(300)
-  .flatMap(send('chat.postMessage'))
-
-const message$ = stream$
-  .flatMap(filterIncomingMessages)
-  .flatMap(createResponse)
-  .delay(300)
-  .flatMap(send('chat.postMessage'))
-
-const all$ = stream$
-  .do(x => console.log(x))
-
-
-Rx.Observable.merge(
-  file$,
-  all$,
-  message$
-)
-.subscribe(
-  x => console.log(x),
-  e => console.log('Error:', e),
-  _ => console.log('Complete.')
-)
-
-
-function filterIncomingMessages(evt) {
-  return actions$
-    .filter(action => (
-      evt.type === 'message' &&
-      evt.text !== undefined &&
-      evt.subtype !== 'bot_message' &&
-      evt.text.includes(action.keyword)
-    ))
-    .map(action => ({ ...evt, reply: action.reply }))
-}
-
-function createResponse(data) {
+function sendResponse(data) {
   return bot$
     .map(x => ({
       channel: data.channel,
@@ -81,7 +95,36 @@ function createResponse(data) {
       unfurl_links: true,
       ...x
     }))
+    .delay(200)
+    .flatMap(send('chat.postMessage'))
 }
 
-app.listen(3000)
+function respondToKeyword(evt) {
+  return actions$
+    .filter(action => (
+      evt.type === 'message' &&
+      evt.text !== undefined &&
+      evt.subtype !== 'bot_message' &&
+      evt.text.includes(action.keyword)
+    ))
+    .map(action => ({
+      ...evt, reply: action.reply
+    }))
+}
+
+function respondToFileShare(x) {
+  return {
+    ...x,
+    reply: `Looks like a ${x.file.pretty_type} file with a mimetype of ${x.file.mimetype}.`
+  }
+}
+
+function respondToAttachment(x) {
+  return {
+    ...x,
+    reply: `I get all my stuff from ${x.message.attachments[0].service_name} too.`
+  }
+}
+
+app.listen(2000)
 module.exports = app
