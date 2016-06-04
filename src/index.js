@@ -12,36 +12,55 @@ const app = express()
 const bot$ = Rx.Observable.of(bot)
 const actions$ = Rx.Observable.from(actions)
 
-const start$ = bot$
+const stream$ = bot$
   .flatMap(send('rtm.start'))
   .map(x => new ws(x.url))
   .flatMap(onConnect)
 
-const typing$ = start$
-  .filter(x => x.type === 'user_typing')
-
-const reactions$ = start$
-  .flatMap(filterIncomingMessages)
-  .flatMap(createResponse)
-  .delay(400)
-  .flatMap(send('chat.postMessage'))
-
-Rx.Observable.merge(reactions$, typing$)
-  .subscribe(
-    x => console.log('Next:', x),
-    e => console.log('Error:', e),
-    _ => console.log('Complete.')
-  )
-
 function onConnect(socket) {
   return Rx.Observable.merge(
-    Rx.Observable.fromEvent(socket, 'start'),
-    Rx.Observable.fromEvent(socket, 'close'),
+    Rx.Observable.fromEvent(socket, 'hello'),
     Rx.Observable.fromEvent(socket, 'message'),
-    Rx.Observable.fromEvent(socket, 'user_typing')
+    Rx.Observable.fromEvent(socket, 'user_typing'),
+    Rx.Observable.fromEvent(socket, 'file_shared'),
+    Rx.Observable.fromEvent(socket, 'file_created'),
+    Rx.Observable.fromEvent(socket, 'file_public'),
+    Rx.Observable.fromEvent(socket, 'file_private'),
+    Rx.Observable.fromEvent(socket, 'file_deleted'),
+    Rx.Observable.fromEvent(socket, 'file_change')
   )
   .map(x => JSON.parse(x))
 }
+
+
+const file$ = stream$
+  .filter(x => x.subtype === 'file_share')
+  .map(x => ({ ...x, reply: `Looks like a ${x.file.pretty_type} file with a mimetype of ${x.file.mimetype}.`}))
+  .flatMap(createResponse)
+  .delay(300)
+  .flatMap(send('chat.postMessage'))
+
+const message$ = stream$
+  .flatMap(filterIncomingMessages)
+  .flatMap(createResponse)
+  .delay(300)
+  .flatMap(send('chat.postMessage'))
+
+const all$ = stream$
+  .do(x => console.log(x))
+
+
+Rx.Observable.merge(
+  file$,
+  all$,
+  message$
+)
+.subscribe(
+  x => console.log(x),
+  e => console.log('Error:', e),
+  _ => console.log('Complete.')
+)
+
 
 function filterIncomingMessages(evt) {
   return actions$

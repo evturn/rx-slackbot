@@ -2,8 +2,8 @@ import * as Rx from 'rxjs'
 import request from 'request'
 import qs from 'querystring'
 
-const sendRequest = url => {
-  return Rx.Observable.create(x => {
+const sendRequest = url => (
+  Rx.Observable.create(x => {
     request(url, (error, response, body) => {
       if (error) {
         x.error(error)
@@ -14,19 +14,14 @@ const sendRequest = url => {
       x.complete()
     })
   })
-}
+)
 
-const makeRequest = ({ query, ...params }) => {
-  return sendRequest(`https://slack.com/api/${query}?${qs.stringify(params)}`)
-}
+const makeRequest = ({ query, ...params }) => (
+  sendRequest(`https://slack.com/api/${query}?${qs.stringify(params)}`)
+)
 
-function send(query) {
-  return x => {
-    return makeRequest({
-      ...x,
-      query
-    })
-  }
-}
+const send = query => (
+  params => makeRequest({ ...params, query })
+)
 
 export default send
