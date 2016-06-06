@@ -12,6 +12,7 @@ const app = express()
 const bot$ = Rx.Observable.of(bot)
 const actions$ = Rx.Observable.from(actions)
 
+
 /*
   Start stream
 */
@@ -19,6 +20,7 @@ const stream$ = bot$
   .flatMap(send('rtm.start'))
   .map(x => new ws(x.url))
   .flatMap(onConnect)
+
 
 /*
   File uploads
@@ -115,7 +117,7 @@ function respondToKeyword(evt) {
 function respondToFileShare(x) {
   return {
     ...x,
-    reply: `Looks like a ${x.file.pretty_type} file with a mimetype of ${x.file.mimetype}.`
+    reply: `You expect me to save that ${x.file.pretty_type} file?`
   }
 }
 
