@@ -123,7 +123,7 @@ function respondToKeyword(evt) {
 function respondToFileShare(x) {
   return {
     ...x,
-    reply: `${x} file added to backpack`
+    reply: `${x.file.pretty_type} file added to <@${x.file.user}>'s backpack`
   }
 }
 
