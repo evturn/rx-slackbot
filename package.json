@@ -19,6 +19,7 @@
     "mongoose": "^4.4.20",
     "querystring": "^0.2.0",
     "request": "^2.72.0",
+    "rx-node": "^1.0.2",
     "rxjs": "^5.0.0-beta.8",
     "ws": "^1.1.0"
   },

@@ -12,17 +12,19 @@ const app = express()
 
 const bot$ = Rx.Observable.of(bot)
 const actions$ = Rx.Observable.from(actions)
-
+const observer = {
+  next: x => console.log(x),
+  error: e => console.log('Error:', e),
+  complete: _ => console.log('Complete.')
+}
 
 /* Start stream */
 const stream$ = bot$
   .flatMap(send('rtm.start'))
   .map(x => new ws(x.url))
   .flatMap(onConnect)
-
-/* Debugger */
-const all$ = stream$
   .do(x => console.log(x))
+
 
 /* File uploads */
 const file$ = stream$
@@ -38,7 +40,6 @@ const file$ = stream$
 
 
 function respondToFileShare(x) {
-  console.log(x)
   return {
     ...x,
     reply: `${x.file.pretty_type} file added to <@${x.file.user}>'s backpack (${x.count} items)`
@@ -57,9 +58,7 @@ function sendResponse(data) {
     .flatMap(send('chat.postMessage'))
 }
 
-/*
-  Messages w/ attachments
-*/
+/* Messages w/ attachments */
 const attachment$ = stream$
   .filter(x => (
     x.type === 'message' &&
@@ -77,9 +76,7 @@ function respondToAttachment(x) {
 }
 
 
-/*
-  Messages w/ keyword
-*/
+/* Messages w/ keyword */
 const message$ = stream$
   .flatMap(respondToKeyword)
   .flatMap(sendResponse)
@@ -97,20 +94,13 @@ function respondToKeyword(evt) {
     }))
 }
 
-/*
-  Subscription
-*/
+/* Subscription */
 Rx.Observable.merge(
   file$,
   attachment$,
-  all$,
   message$
 )
-.subscribe(
-  x => console.log(x),
-  e => console.log('Error:', e),
-  _ => console.log('Complete.')
-)
+.subscribe(observer)
 
 function onConnect(socket) {
   return Rx.Observable.merge(
@@ -126,9 +116,6 @@ function onConnect(socket) {
   )
   .map(x => JSON.parse(x))
 }
-
-
-
 
 app.listen(2000)
 module.exports = app
