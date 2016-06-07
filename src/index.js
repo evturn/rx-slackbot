@@ -2,6 +2,7 @@ import express from 'express'
 import * as Rx from 'rxjs'
 import ws from 'ws'
 import send from './utils'
+import { Upload } from './db'
 import {
   bot,
   actions
@@ -27,8 +28,13 @@ const stream$ = bot$
 */
 const file$ = stream$
   .filter(x => x.subtype === 'file_share')
-  .map(respondToFileShare)
-  .flatMap(sendResponse)
+  .flatMap(x => {
+    const upload = new Upload(x.file)
+    return Rx.Observable.fromPromise(upload.save())
+      .map(res => respondToFileShare(x))
+      .flatMap(sendResponse)
+  })
+
 
 
 /*
@@ -117,7 +123,7 @@ function respondToKeyword(evt) {
 function respondToFileShare(x) {
   return {
     ...x,
-    reply: `You expect me to save that ${x.file.pretty_type} file?`
+    reply: `${x} file added to backpack`
   }
 }
 
